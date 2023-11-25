@@ -233,12 +233,12 @@ function CameraPage() {
       });
       const task = await response.json();
       const id = task.id;
-
+      // it will make the first POST request for sample images
       const sampleImagesResponse = await fetch(`${base_url}/getSampleImages`, {
         method: "POST",
-        body: formData, 
+        body: "Payload to send for sampleimages", 
       });
-  
+      // if the first request is successfull then it will keep checking for sample images in every 1min
       if (sampleImagesResponse.ok) {
         var sampleImageInterval = setInterval(() => {
           checkSampleImages(id);
@@ -247,7 +247,7 @@ function CameraPage() {
         setLoading(false);
         console.log("Failed to get sample images");
       }
-
+      // this will keep checking for video in every 1 min
       const videoCheckInterval = setInterval(() => {
         checkVideo(id);
       }, 60000);
@@ -265,6 +265,8 @@ function CameraPage() {
       console.log(error);
     }
   };
+  // below is a cleanup function, agar kch misbehave ho DOM m then use this(make sure to make sampleImageInterval, videoCheckInterval, checkVideoInterval accessible )
+
 
   // useEffect(() => {
   //   return () => {
