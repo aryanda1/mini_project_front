@@ -258,3 +258,11 @@ input[type="radio"]::after {
     opacity: 1;
   }
 }
+.RegenerateContinueButtons{
+  display: flex;
+  gap: 3em;
+  justify-content: flex-start;
+  margin-left: 14.2em;
+  margin-bottom: 2em;
+
+}

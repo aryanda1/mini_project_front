@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import "./CameraPage.css";
 import Sidenav from "./Sidenav";
 import { Backdrop } from "@mui/material";
@@ -102,25 +102,25 @@ function CameraPage() {
   const base_url = process.env.REACT_APP_API_URL;
 
   // const handleSubmit = async (event) => {
-    // event.preventDefault(); // prevent the default form submission behavior
-    // const formData = new FormData(event.target); // get the form data
-    // const url = `${base_url}/submit_form`; // replace this with your URL
-    // formData.delete("audio");
-    // try {
-    //   const buffer = await urlToBuffer(audioURL);
-    //   const croppedBuffer = cropBuffer(buffer, time[0], time[1]);
-    //   const wavBytes = bufferToWav(croppedBuffer);
-    //   const wav = new Blob([wavBytes], { type: "audio/wav" });
-    //   const audioTemp = new File([wav], "my-audio-file.wav", {
-    //     type: "audio/wav",
-    //   });
-    //   console.log(audioTemp);
-    //   formData.append("audio", audioTemp, "temp.wav");
-    //   setLoading(true);
-    //   const response = await fetch(url, {
-    //     method: "POST",
-    //     body: formData,
-    //   });
+  // event.preventDefault(); // prevent the default form submission behavior
+  // const formData = new FormData(event.target); // get the form data
+  // const url = `${base_url}/submit_form`; // replace this with your URL
+  // formData.delete("audio");
+  // try {
+  //   const buffer = await urlToBuffer(audioURL);
+  //   const croppedBuffer = cropBuffer(buffer, time[0], time[1]);
+  //   const wavBytes = bufferToWav(croppedBuffer);
+  //   const wav = new Blob([wavBytes], { type: "audio/wav" });
+  //   const audioTemp = new File([wav], "my-audio-file.wav", {
+  //     type: "audio/wav",
+  //   });
+  //   console.log(audioTemp);
+  //   formData.append("audio", audioTemp, "temp.wav");
+  //   setLoading(true);
+  //   const response = await fetch(url, {
+  //     method: "POST",
+  //     body: formData,
+  //   });
   //     const task = await response.json();
   //     console.log(task);
   //     const id = task.id;
@@ -162,22 +162,23 @@ function CameraPage() {
   //     console.log(error);
   //   }
   // };
-  
+
   const [sampleImages, setSampleImages] = useState([
-    { url: 'https://placekitten.com/200/200', alt: 'Sample Image 1' },
-    { url: 'https://placekitten.com/201/200', alt: 'Sample Image 2' },
-    { url: 'https://placekitten.com/202/200', alt: 'Sample Image 3' },
+    { url: "https://placekitten.com/200/200", alt: "Sample Image 1" },
+    { url: "https://placekitten.com/201/200", alt: "Sample Image 2" },
+    { url: "https://placekitten.com/202/200", alt: "Sample Image 3" },
     // Add more dummy images as needed
   ]);
-  
+
   const [videoURL, setVideoURL] = useState(null);
+  const [generateOption, setGenerateOption] = useState(null);
   const [sampleImageInterval, setSampleImageInterval] = useState(null);
   const [videoCheckInterval, setVideoCheckInterval] = useState(null);
-  const [checkVideoInterval, setCheckVideoInterval] = useState(null);
+  const [gid, setGid] = useState("");
 
   const checkSampleImages = async () => {
     try {
-      const response = await fetch(`${base_url}/sampleImageCheck`);
+      const response = await fetch(`${base_url}/get_samples/${gid}`);
       if (response.ok) {
         const images = await response.json();
         setSampleImages(images);
@@ -187,9 +188,9 @@ function CameraPage() {
     }
   };
 
-  const checkVideo = async (id) => {
+  const checkVideo = async () => {
     try {
-      const response = await fetch(`${base_url}/get_video/${id}`);
+      const response = await fetch(`${base_url}/get_video/${gid}`);
       if (response.ok) {
         for (var pair of response.headers.entries()) {
           if (pair[1] === "video/mp4") {
@@ -210,6 +211,46 @@ function CameraPage() {
     } catch (error) {
       console.log(error);
     }
+  };
+  const imageRouteCalls = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(`${base_url}/gen_samples/${gid}`);
+      console.log(response.message);
+    } catch (error) {
+      console.log(error);
+    }
+    var sampleImageInterval = setInterval(() => {
+      checkSampleImages(gid);
+    }, 60000);
+
+    const checkSampleInterval = setInterval(() => {
+      if (sampleImages) {
+        setLoading(false);
+        clearInterval(sampleImageInterval);
+        clearInterval(checkSampleInterval);
+      }
+    }, 1000);
+  };
+  const videoRouteCalls = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(`${base_url}/gen_video/${gid}`);
+      console.log(response.message);
+    } catch (error) {
+      console.log(error);
+    }
+    var VideoInterval = setInterval(() => {
+      checkVideo(gid);
+    }, 60000);
+
+    const checkVideoInterval = setInterval(() => {
+      if (videoURL) {
+        setLoading(false);
+        clearInterval(VideoInterval);
+        clearInterval(checkVideoInterval);
+      }
+    }, 1000);
   };
   const handleSubmit = async (event) => {
     event.preventDefault(); // prevent the default form submission behavior
@@ -233,50 +274,35 @@ function CameraPage() {
       });
       const task = await response.json();
       const id = task.id;
-      // it will make the first POST request for sample images
-      const sampleImagesResponse = await fetch(`${base_url}/getSampleImages`, {
-        method: "POST",
-        body: "Payload to send for sampleimages", 
-      });
-      // if the first request is successfull then it will keep checking for sample images in every 1min
-      if (sampleImagesResponse.ok) {
-        var sampleImageInterval = setInterval(() => {
-          checkSampleImages(id);
-        }, 60000);
-      } else {
-        setLoading(false);
-        console.log("Failed to get sample images");
-      }
-      // this will keep checking for video in every 1 min
-      const videoCheckInterval = setInterval(() => {
-        checkVideo(id);
-      }, 60000);
-
-      const checkVideoInterval = setInterval(() => {
-        if (videoURL) {
-          setLoading(false);
-          clearInterval(sampleImageInterval);
-          clearInterval(videoCheckInterval);
-          clearInterval(checkVideoInterval);
-        }
-      }, 1000);
+      setGid(id);
+      imageRouteCalls();
     } catch (error) {
       setLoading(false);
       console.log(error);
     }
   };
-  // below is a cleanup function, agar kch misbehave ho DOM m then use this(make sure to make sampleImageInterval, videoCheckInterval, checkVideoInterval accessible )
 
-
-  // useEffect(() => {
-  //   return () => {
-  //     clearInterval(sampleImageInterval);
-  //     clearInterval(videoCheckInterval);
-  //     clearInterval(checkVideoInterval);
-  //   };
-  // }, [sampleImageInterval, videoCheckInterval, checkVideoInterval]);
   console.log(loading);
+  const handleGenerateButtonClick = (action) => {
+    console.log("action:", action);
+    if (action === "regenerate") {
+      setSampleImages([]);
 
+      imageRouteCalls();
+    } else if (action === "continue") {
+      videoRouteCalls();
+    }
+  };
+  useEffect(() => {
+    return () => {
+      if (sampleImageInterval) {
+        clearInterval(sampleImageInterval);
+      }
+      if (videoCheckInterval) {
+        clearInterval(videoCheckInterval);
+      }
+    };
+  }, []);
   return (
     <>
       <Sidenav />
@@ -465,15 +491,35 @@ function CameraPage() {
         </form>
       </div>
       {sampleImages.length > 0 && (
-      <div className="SampleImages">
-        <h3>Sample Images:</h3>
-        <div className="ImageContainer">
-          {sampleImages.map((image, index) => (
-            <img key={index} src={image.url} alt={`Sample Image ${index}`} />
-          ))}
+        <div>
+          <div className="SampleImages">
+            <h3>Sample Images:</h3>
+            <div className="ImageContainer">
+              {sampleImages.map((image, index) => (
+                <img
+                  key={index}
+                  src={image.url}
+                  alt={`Sample Image ${index}`}
+                />
+              ))}
+            </div>
+          </div>
+          <div className="RegenerateContinueButtons">
+            <button
+              className="recording-btn"
+              onClick={() => handleGenerateButtonClick("regenerate")}
+            >
+              Regenerate
+            </button>
+            <button
+              className="recording-btn"
+              onClick={() => handleGenerateButtonClick("continue")}
+            >
+              Continue
+            </button>
+          </div>
         </div>
-      </div>
-    )}
+      )}
     </>
   );
 }
