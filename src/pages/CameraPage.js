@@ -171,7 +171,6 @@ function CameraPage() {
   ]);
 
   const [videoURL, setVideoURL] = useState(null);
-  const [generateOption, setGenerateOption] = useState(null);
   const [sampleImageInterval, setSampleImageInterval] = useState(null);
   const [videoCheckInterval, setVideoCheckInterval] = useState(null);
   const [gid, setGid] = useState("");
@@ -220,14 +219,14 @@ function CameraPage() {
     } catch (error) {
       console.log(error);
     }
-    var sampleImageInterval = setInterval(() => {
+    var sampleImageIntervall = setInterval(() => {
       checkSampleImages(gid);
     }, 60000);
-
+    setSampleImageInterval(sampleImageIntervall);
     const checkSampleInterval = setInterval(() => {
       if (sampleImages) {
         setLoading(false);
-        clearInterval(sampleImageInterval);
+        clearInterval(sampleImageIntervall);
         clearInterval(checkSampleInterval);
       }
     }, 1000);
@@ -243,7 +242,7 @@ function CameraPage() {
     var VideoInterval = setInterval(() => {
       checkVideo(gid);
     }, 60000);
-
+    setVideoCheckInterval(VideoInterval);
     const checkVideoInterval = setInterval(() => {
       if (videoURL) {
         setLoading(false);
