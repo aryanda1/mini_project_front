@@ -217,3 +217,38 @@ input[type="radio"]::after {
   outline: transparent;
   padding: 0.3rem 0.4rem;
 }
+
+/* css for sample images */
+
+.SampleImages {
+  margin-top: 20px;
+  opacity: 0; 
+  animation: fadeIn 1s forwards; 
+}
+
+.ImageContainer {
+  display: flex;
+  flex-wrap: wrap;
+  width: 87%;
+  justify-content: space-evenly;
+  margin-left: 11em;
+  margin-bottom: 2em;
+}
+
+.ImageContainer img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease-in-out; 
+}
+
+.ImageContainer img:hover {
+  transform: scale(1.1); 
+}
+
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+  }
+}

@@ -101,6 +101,116 @@ function CameraPage() {
   console.log(time);
   const base_url = process.env.REACT_APP_API_URL;
 
+  // const handleSubmit = async (event) => {
+    // event.preventDefault(); // prevent the default form submission behavior
+    // const formData = new FormData(event.target); // get the form data
+    // const url = `${base_url}/submit_form`; // replace this with your URL
+    // formData.delete("audio");
+    // try {
+    //   const buffer = await urlToBuffer(audioURL);
+    //   const croppedBuffer = cropBuffer(buffer, time[0], time[1]);
+    //   const wavBytes = bufferToWav(croppedBuffer);
+    //   const wav = new Blob([wavBytes], { type: "audio/wav" });
+    //   const audioTemp = new File([wav], "my-audio-file.wav", {
+    //     type: "audio/wav",
+    //   });
+    //   console.log(audioTemp);
+    //   formData.append("audio", audioTemp, "temp.wav");
+    //   setLoading(true);
+    //   const response = await fetch(url, {
+    //     method: "POST",
+    //     body: formData,
+    //   });
+  //     const task = await response.json();
+  //     console.log(task);
+  //     const id = task.id;
+  //     console.log(id);
+  //     var refreshId = setInterval(async function () {
+  //       const url = `${base_url}/get_video/${id}`;
+  //       try {
+  //         const response = await fetch(url, { method: "POST" });
+  //         console.log(response);
+  //         for (var pair of response.headers.entries()) {
+  //           console.log(pair[0] + ": " + pair[1]);
+  //           if (pair[1] === "video/mp4") {
+  //             // key I'm looking for in this instance
+  //             clearInterval(refreshId);
+  //             console.log("k");
+  //             const filename = "temp.mp4";
+  //             const file = await response.blob();
+  //             const url = URL.createObjectURL(file);
+  //             const a = document.createElement("a");
+  //             a.href = url;
+  //             a.download = filename;
+  //             document.body.appendChild(a);
+  //             a.click();
+  //             document.body.removeChild(a);
+  //             setLoading(false);
+  //           }
+  //         }
+  //         // if (response.headers.get("content-disposition")) {
+  //         //   console.log("hi");
+  //         // }
+  //         console.log("Night");
+  //       } catch (error) {
+  //         clearInterval(refreshId);
+  //         setLoading(false);
+  //         console.log(error);
+  //       }
+  //     }, 60000);
+  //   } catch (error) {
+  //     console.log(error);
+  //   }
+  // };
+  
+  const [sampleImages, setSampleImages] = useState([
+    { url: 'https://placekitten.com/200/200', alt: 'Sample Image 1' },
+    { url: 'https://placekitten.com/201/200', alt: 'Sample Image 2' },
+    { url: 'https://placekitten.com/202/200', alt: 'Sample Image 3' },
+    // Add more dummy images as needed
+  ]);
+  
+  const [videoURL, setVideoURL] = useState(null);
+  const [sampleImageInterval, setSampleImageInterval] = useState(null);
+  const [videoCheckInterval, setVideoCheckInterval] = useState(null);
+  const [checkVideoInterval, setCheckVideoInterval] = useState(null);
+
+  const checkSampleImages = async () => {
+    try {
+      const response = await fetch(`${base_url}/sampleImageCheck`);
+      if (response.ok) {
+        const images = await response.json();
+        setSampleImages(images);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const checkVideo = async (id) => {
+    try {
+      const response = await fetch(`${base_url}/get_video/${id}`);
+      if (response.ok) {
+        for (var pair of response.headers.entries()) {
+          if (pair[1] === "video/mp4") {
+            const filename = "temp.mp4";
+            const file = await response.blob();
+            const url = URL.createObjectURL(file);
+            setVideoURL(url);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setLoading(false);
+          }
+        }
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
   const handleSubmit = async (event) => {
     event.preventDefault(); // prevent the default form submission behavior
     const formData = new FormData(event.target); // get the form data
@@ -122,46 +232,47 @@ function CameraPage() {
         body: formData,
       });
       const task = await response.json();
-      console.log(task);
       const id = task.id;
-      console.log(id);
-      var refreshId = setInterval(async function () {
-        const url = `${base_url}/get_video/${id}`;
-        try {
-          const response = await fetch(url, { method: "POST" });
-          console.log(response);
-          for (var pair of response.headers.entries()) {
-            console.log(pair[0] + ": " + pair[1]);
-            if (pair[1] === "video/mp4") {
-              // key I'm looking for in this instance
-              clearInterval(refreshId);
-              console.log("k");
-              const filename = "temp.mp4";
-              const file = await response.blob();
-              const url = URL.createObjectURL(file);
-              const a = document.createElement("a");
-              a.href = url;
-              a.download = filename;
-              document.body.appendChild(a);
-              a.click();
-              document.body.removeChild(a);
-              setLoading(false);
-            }
-          }
-          // if (response.headers.get("content-disposition")) {
-          //   console.log("hi");
-          // }
-          console.log("Night");
-        } catch (error) {
-          clearInterval(refreshId);
-          setLoading(false);
-          console.log(error);
-        }
+
+      const sampleImagesResponse = await fetch(`${base_url}/getSampleImages`, {
+        method: "POST",
+        body: formData, 
+      });
+  
+      if (sampleImagesResponse.ok) {
+        var sampleImageInterval = setInterval(() => {
+          checkSampleImages(id);
+        }, 60000);
+      } else {
+        setLoading(false);
+        console.log("Failed to get sample images");
+      }
+
+      const videoCheckInterval = setInterval(() => {
+        checkVideo(id);
       }, 60000);
+
+      const checkVideoInterval = setInterval(() => {
+        if (videoURL) {
+          setLoading(false);
+          clearInterval(sampleImageInterval);
+          clearInterval(videoCheckInterval);
+          clearInterval(checkVideoInterval);
+        }
+      }, 1000);
     } catch (error) {
+      setLoading(false);
       console.log(error);
     }
   };
+
+  // useEffect(() => {
+  //   return () => {
+  //     clearInterval(sampleImageInterval);
+  //     clearInterval(videoCheckInterval);
+  //     clearInterval(checkVideoInterval);
+  //   };
+  // }, [sampleImageInterval, videoCheckInterval, checkVideoInterval]);
   console.log(loading);
 
   return (
@@ -351,6 +462,16 @@ function CameraPage() {
           </button>
         </form>
       </div>
+      {sampleImages.length > 0 && (
+      <div className="SampleImages">
+        <h3>Sample Images:</h3>
+        <div className="ImageContainer">
+          {sampleImages.map((image, index) => (
+            <img key={index} src={image.url} alt={`Sample Image ${index}`} />
+          ))}
+        </div>
+      </div>
+    )}
     </>
   );
 }
