@@ -220,6 +220,12 @@ input[type="radio"]::after {
 
 /* css for sample images */
 
+.SampleImages h3{
+  justify-content: flex-start;
+  display: flex;
+  margin-left: 12.1em;
+  margin-bottom: 1em;
+}
 .SampleImages {
   margin-top: 20px;
   opacity: 0; 
