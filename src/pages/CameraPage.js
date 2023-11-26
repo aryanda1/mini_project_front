@@ -6,6 +6,8 @@ import { CircularProgress } from "@mui/material";
 import artist from "../assests/Artists";
 import AudioWaveform from "../components/AudioWave";
 import { bufferToWav, cropBuffer, urlToBuffer } from "../assests/assist";
+import Modal from 'react-modal';
+
 function CameraPage() {
   const [theme, setTheme] = useState([]);
   const [option, setOption] = useState("0");
@@ -162,15 +164,15 @@ function CameraPage() {
   //     console.log(error);
   //   }
   // };
-
+  Modal.setAppElement('#root');
   const [sampleImages, setSampleImages] = useState([]);
 
-  const [terminateLoop, setTerminateLoop] = useState(false)
+  const [terminateLoop, setTerminateLoop] = useState(false);
   const [sampleImageInterval, setSampleImageInterval] = useState(null);
   const [videoCheckInterval, setVideoCheckInterval] = useState(null);
   const [gid, setGid] = useState("");
 
-  const checkSampleImages = async (id,sampleLoop) => {
+  const checkSampleImages = async (id, sampleLoop) => {
     try {
       const response = await fetch(`${base_url}/get_samples/${id}`, {
         method: "POST",
@@ -179,7 +181,7 @@ function CameraPage() {
       if (response.ok) {
         const images = await response.json();
         if (images && images.length > 0) {
-          console.log("images:",images);
+          console.log("images:", images);
           setSampleImages(images);
           setLoading(false);
           console.log(sampleImageInterval);
@@ -203,7 +205,7 @@ function CameraPage() {
         method: "POST",
       });
       if (response.ok) {
-        console.log("video",response);
+        console.log("video", response);
         for (var pair of response.headers.entries()) {
           if (pair[1] === "video/mp4") {
             const filename = "temp.mp4";
@@ -233,7 +235,7 @@ function CameraPage() {
       });
       console.log(response.message);
       let sampleLoop = setInterval(() => {
-        checkSampleImages(gid,sampleLoop);
+        checkSampleImages(gid, sampleLoop);
       }, 60000);
 
       console.log("sample loop test : " + sampleLoop);
@@ -264,8 +266,8 @@ function CameraPage() {
   };
 
   const waitFunc = async (delay) => {
-    return new Promise(resolve => setTimeout(resolve, delay));
-  }
+    return new Promise((resolve) => setTimeout(resolve, delay));
+  };
 
   const handleSubmit = async (event) => {
     event.preventDefault(); // prevent the default form submission behavior
@@ -297,7 +299,7 @@ function CameraPage() {
 
       let sampleLoop = setInterval(() => {
         console.log("Inside get samples");
-        checkSampleImages(id,sampleLoop);
+        checkSampleImages(id, sampleLoop);
       }, 60000);
 
       // while(imgRes == null){
@@ -307,8 +309,7 @@ function CameraPage() {
       //   await waitFunc(60000);
       // }
 
-      console.log("after loop call one",sampleLoop);
-      
+      console.log("after loop call one", sampleLoop);
     } catch (error) {
       setLoading(false);
       console.log(error);
@@ -316,14 +317,24 @@ function CameraPage() {
   };
 
   console.log(loading);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+const openModal = () => {
+  setIsModalOpen(true);
+};
+
+const closeModal = () => {
+  setIsModalOpen(false);
+};
   const handleGenerateButtonClick = (action) => {
     console.log("action:", action);
     if (action === "regenerate") {
       setSampleImages([]);
-
+      closeModal();
       imageRouteCalls();
     } else if (action === "continue") {
       videoRouteCalls();
+      closeModal();
     }
   };
   // useEffect(() => {
@@ -336,6 +347,7 @@ function CameraPage() {
   //     }
   //   };
   // }, []);
+  
   return (
     <>
       <Sidenav />
@@ -518,39 +530,46 @@ function CameraPage() {
               name="upscale"
             />
           </div>
-          <button type="submit" className="recording-btn">
+          <button type="submit" className="recording-btn" onClick={openModal}>
             Create Video
           </button>
         </form>
       </div>
       {sampleImages.length > 0 && (
-        <div>
-          <div className="SampleImages">
-            <h3>Sample Images:</h3>
-            <div className="ImageContainer">
-              {sampleImages.map((image, index) => (
-                <img
-                  key={index}
-                  src={`data:${image.media_type};base64,${image.content}`}
-                  alt={`Sample  ${index}`}
-                />
-              ))}
+        <div >
+          <Modal
+            isOpen={isModalOpen}
+            onRequestClose={closeModal}
+            contentLabel="Options Modal"
+            className="modlll"
+          >
+            <div className="SampleImages">
+              <h3>Sample Images:</h3>
+              <div className="ImageContainer">
+                {sampleImages.map((image, index) => (
+                  <img
+                    key={index}
+                    src={`data:${image.media_type};base64,${image.content}`}
+                    alt={`Sample  ${index}`}
+                  />
+                ))}
+              </div>
             </div>
-          </div>
-          <div className="RegenerateContinueButtons">
-            <button
-              className="recording-btn"
-              onClick={() => handleGenerateButtonClick("regenerate")}
-            >
-              Regenerate
-            </button>
-            <button
-              className="recording-btn"
-              onClick={() => handleGenerateButtonClick("continue")}
-            >
-              Continue
-            </button>
-          </div>
+            <div className="RegenerateContinueButtons">
+              <button
+                className="recording-btn"
+                onClick={() => handleGenerateButtonClick("regenerate")}
+              >
+                Regenerate
+              </button>
+              <button
+                className="recording-btn"
+                onClick={() => handleGenerateButtonClick("continue")}
+              >
+                Continue
+              </button>
+            </div>
+          </Modal>
         </div>
       )}
     </>
