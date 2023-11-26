@@ -99,7 +99,7 @@ function CameraPage() {
     setAudioURL(url);
   };
   console.log(time);
-  const base_url = process.env.REACT_APP_API_URL;
+  const base_url = "process.env.REACT_APP_API_URL";
 
   // const handleSubmit = async (event) => {
   // event.preventDefault(); // prevent the default form submission behavior
@@ -163,24 +163,27 @@ function CameraPage() {
   //   }
   // };
 
-  const [sampleImages, setSampleImages] = useState([
-    { url: "https://placekitten.com/200/200", alt: "Sample Image 1" },
-    { url: "https://placekitten.com/201/200", alt: "Sample Image 2" },
-    { url: "https://placekitten.com/202/200", alt: "Sample Image 3" },
-    // Add more dummy images as needed
-  ]);
+  const [sampleImages, setSampleImages] = useState([]);
 
-  const [videoURL, setVideoURL] = useState(null);
   const [sampleImageInterval, setSampleImageInterval] = useState(null);
   const [videoCheckInterval, setVideoCheckInterval] = useState(null);
   const [gid, setGid] = useState("");
 
-  const checkSampleImages = async () => {
+  const checkSampleImages = async (id) => {
     try {
-      const response = await fetch(`${base_url}/get_samples/${gid}`);
+      const response = await fetch(`${base_url}/get_samples/${id}`, {
+        method: "POST",
+      });
+      console.log(response);
       if (response.ok) {
         const images = await response.json();
-        setSampleImages(images);
+        if (images && images.length > 0) {
+          console.log(images);
+          setSampleImages(images);
+          setLoading(false);
+          console.log(sampleImageInterval);
+          clearInterval(sampleImageInterval);
+        }
       }
     } catch (error) {
       console.log(error);
@@ -189,14 +192,15 @@ function CameraPage() {
 
   const checkVideo = async () => {
     try {
-      const response = await fetch(`${base_url}/get_video/${gid}`);
+      const response = await fetch(`${base_url}/get_video/${gid}`, {
+        method: "POST",
+      });
       if (response.ok) {
         for (var pair of response.headers.entries()) {
           if (pair[1] === "video/mp4") {
             const filename = "temp.mp4";
             const file = await response.blob();
             const url = URL.createObjectURL(file);
-            setVideoURL(url);
             const a = document.createElement("a");
             a.href = url;
             a.download = filename;
@@ -204,6 +208,7 @@ function CameraPage() {
             a.click();
             document.body.removeChild(a);
             setLoading(false);
+            clearInterval(videoCheckInterval);
           }
         }
       }
@@ -214,27 +219,25 @@ function CameraPage() {
   const imageRouteCalls = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${base_url}/gen_samples/${gid}`);
+      const response = await fetch(`${base_url}/gen_samples/${gid}`, {
+        method: "POST",
+      });
       console.log(response.message);
+      var sampleImageIntervall = setInterval(() => {
+        checkSampleImages(gid);
+      }, 60000);
+      console.log(sampleImageIntervall);
+      setSampleImageInterval(sampleImageIntervall);
     } catch (error) {
       console.log(error);
     }
-    var sampleImageIntervall = setInterval(() => {
-      checkSampleImages(gid);
-    }, 60000);
-    setSampleImageInterval(sampleImageIntervall);
-    const checkSampleInterval = setInterval(() => {
-      if (sampleImages) {
-        setLoading(false);
-        clearInterval(sampleImageIntervall);
-        clearInterval(checkSampleInterval);
-      }
-    }, 1000);
   };
   const videoRouteCalls = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${base_url}/gen_video/${gid}`);
+      const response = await fetch(`${base_url}/gen_video/${gid}`, {
+        method: "POST",
+      });
       console.log(response.message);
     } catch (error) {
       console.log(error);
@@ -243,13 +246,6 @@ function CameraPage() {
       checkVideo(gid);
     }, 60000);
     setVideoCheckInterval(VideoInterval);
-    const checkVideoInterval = setInterval(() => {
-      if (videoURL) {
-        setLoading(false);
-        clearInterval(VideoInterval);
-        clearInterval(checkVideoInterval);
-      }
-    }, 1000);
   };
   const handleSubmit = async (event) => {
     event.preventDefault(); // prevent the default form submission behavior
@@ -272,9 +268,16 @@ function CameraPage() {
         body: formData,
       });
       const task = await response.json();
+      console.log(task);
       const id = task.id;
+      console.log(id);
       setGid(id);
-      imageRouteCalls();
+      var sampleImageIntervall = setInterval(() => {
+        console.log("Inside get samples");
+        checkSampleImages(id);
+      }, 60000);
+      console.log(sampleImageIntervall);
+      setSampleImageInterval(sampleImageIntervall);
     } catch (error) {
       setLoading(false);
       console.log(error);
@@ -292,16 +295,16 @@ function CameraPage() {
       videoRouteCalls();
     }
   };
-  useEffect(() => {
-    return () => {
-      if (sampleImageInterval) {
-        clearInterval(sampleImageInterval);
-      }
-      if (videoCheckInterval) {
-        clearInterval(videoCheckInterval);
-      }
-    };
-  }, []);
+  // useEffect(() => {
+  //   return () => {
+  //     if (sampleImageInterval) {
+  //       clearInterval(sampleImageInterval);
+  //     }
+  //     if (videoCheckInterval) {
+  //       clearInterval(videoCheckInterval);
+  //     }
+  //   };
+  // }, []);
   return (
     <>
       <Sidenav />
@@ -497,8 +500,8 @@ function CameraPage() {
               {sampleImages.map((image, index) => (
                 <img
                   key={index}
-                  src={image.url}
-                  alt={`Sample Image ${index}`}
+                  src={`data:${image.media_type};base64,${image.content}`}
+                  alt={`Sample  ${index}`}
                 />
               ))}
             </div>
