@@ -99,7 +99,7 @@ function CameraPage() {
     setAudioURL(url);
   };
   console.log(time);
-  const base_url = "process.env.REACT_APP_API_URL";
+  const base_url = "PROCESS.env.REACT_APP";
 
   // const handleSubmit = async (event) => {
   // event.preventDefault(); // prevent the default form submission behavior
@@ -165,11 +165,12 @@ function CameraPage() {
 
   const [sampleImages, setSampleImages] = useState([]);
 
+  const [terminateLoop, setTerminateLoop] = useState(false)
   const [sampleImageInterval, setSampleImageInterval] = useState(null);
   const [videoCheckInterval, setVideoCheckInterval] = useState(null);
   const [gid, setGid] = useState("");
 
-  const checkSampleImages = async (id) => {
+  const checkSampleImages = async (id,sampleLoop) => {
     try {
       const response = await fetch(`${base_url}/get_samples/${id}`, {
         method: "POST",
@@ -178,24 +179,31 @@ function CameraPage() {
       if (response.ok) {
         const images = await response.json();
         if (images && images.length > 0) {
-          console.log(images);
+          console.log("images:",images);
           setSampleImages(images);
           setLoading(false);
           console.log(sampleImageInterval);
-          clearInterval(sampleImageInterval);
+          clearInterval(sampleLoop);
+          setTerminateLoop(true);
+
+          return true;
         }
       }
+
+      return null;
     } catch (error) {
       console.log(error);
+      return null;
     }
   };
 
-  const checkVideo = async () => {
+  const checkVideo = async (VideoInterval) => {
     try {
       const response = await fetch(`${base_url}/get_video/${gid}`, {
         method: "POST",
       });
       if (response.ok) {
+        console.log("video",response);
         for (var pair of response.headers.entries()) {
           if (pair[1] === "video/mp4") {
             const filename = "temp.mp4";
@@ -208,7 +216,7 @@ function CameraPage() {
             a.click();
             document.body.removeChild(a);
             setLoading(false);
-            clearInterval(videoCheckInterval);
+            clearInterval(VideoInterval);
           }
         }
       }
@@ -216,6 +224,7 @@ function CameraPage() {
       console.log(error);
     }
   };
+  // var sampleLoop;
   const imageRouteCalls = async () => {
     setLoading(true);
     try {
@@ -223,15 +232,21 @@ function CameraPage() {
         method: "POST",
       });
       console.log(response.message);
-      var sampleImageIntervall = setInterval(() => {
-        checkSampleImages(gid);
+      let sampleLoop = setInterval(() => {
+        checkSampleImages(gid,sampleLoop);
       }, 60000);
-      console.log(sampleImageIntervall);
-      setSampleImageInterval(sampleImageIntervall);
+
+      console.log("sample loop test : " + sampleLoop);
+      // setSampleImageInterval(sampleLoop);
     } catch (error) {
       console.log(error);
     }
   };
+  // useEffect(()=>{
+  //   console.log("Inside useEffect");
+  //   console.log(sampleLoop);
+  //   clearInterval(sampleLoop);
+  // },[terminateLoop])
   const videoRouteCalls = async () => {
     setLoading(true);
     try {
@@ -242,11 +257,16 @@ function CameraPage() {
     } catch (error) {
       console.log(error);
     }
-    var VideoInterval = setInterval(() => {
-      checkVideo(gid);
+    let VideoInterval = setInterval(() => {
+      checkVideo(VideoInterval);
     }, 60000);
     setVideoCheckInterval(VideoInterval);
   };
+
+  const waitFunc = async (delay) => {
+    return new Promise(resolve => setTimeout(resolve, delay));
+  }
+
   const handleSubmit = async (event) => {
     event.preventDefault(); // prevent the default form submission behavior
     const formData = new FormData(event.target); // get the form data
@@ -272,12 +292,23 @@ function CameraPage() {
       const id = task.id;
       console.log(id);
       setGid(id);
-      var sampleImageIntervall = setInterval(() => {
+
+      let imgRes = null;
+
+      let sampleLoop = setInterval(() => {
         console.log("Inside get samples");
-        checkSampleImages(id);
+        checkSampleImages(id,sampleLoop);
       }, 60000);
-      console.log(sampleImageIntervall);
-      setSampleImageInterval(sampleImageIntervall);
+
+      // while(imgRes == null){
+      //   console.log("Loop img")
+      //   imgRes = await checkSampleImages(id);
+
+      //   await waitFunc(60000);
+      // }
+
+      console.log("after loop call one",sampleLoop);
+      
     } catch (error) {
       setLoading(false);
       console.log(error);
