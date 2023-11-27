@@ -6,7 +6,7 @@ import { CircularProgress } from "@mui/material";
 import artist from "../assests/Artists";
 import AudioWaveform from "../components/AudioWave";
 import { bufferToWav, cropBuffer, urlToBuffer } from "../assests/assist";
-import Modal from 'react-modal';
+import Modal from "react-modal";
 
 function CameraPage() {
   const [theme, setTheme] = useState([]);
@@ -100,76 +100,10 @@ function CameraPage() {
     const url = URL.createObjectURL(file);
     setAudioURL(url);
   };
-  console.log(time);
-  const base_url = "PROCESS.env.REACT_APP";
+  const base_url = "https://4897-34-124-142-73.ngrok-free.app";
 
-  // const handleSubmit = async (event) => {
-  // event.preventDefault(); // prevent the default form submission behavior
-  // const formData = new FormData(event.target); // get the form data
-  // const url = `${base_url}/submit_form`; // replace this with your URL
-  // formData.delete("audio");
-  // try {
-  //   const buffer = await urlToBuffer(audioURL);
-  //   const croppedBuffer = cropBuffer(buffer, time[0], time[1]);
-  //   const wavBytes = bufferToWav(croppedBuffer);
-  //   const wav = new Blob([wavBytes], { type: "audio/wav" });
-  //   const audioTemp = new File([wav], "my-audio-file.wav", {
-  //     type: "audio/wav",
-  //   });
-  //   console.log(audioTemp);
-  //   formData.append("audio", audioTemp, "temp.wav");
-  //   setLoading(true);
-  //   const response = await fetch(url, {
-  //     method: "POST",
-  //     body: formData,
-  //   });
-  //     const task = await response.json();
-  //     console.log(task);
-  //     const id = task.id;
-  //     console.log(id);
-  //     var refreshId = setInterval(async function () {
-  //       const url = `${base_url}/get_video/${id}`;
-  //       try {
-  //         const response = await fetch(url, { method: "POST" });
-  //         console.log(response);
-  //         for (var pair of response.headers.entries()) {
-  //           console.log(pair[0] + ": " + pair[1]);
-  //           if (pair[1] === "video/mp4") {
-  //             // key I'm looking for in this instance
-  //             clearInterval(refreshId);
-  //             console.log("k");
-  //             const filename = "temp.mp4";
-  //             const file = await response.blob();
-  //             const url = URL.createObjectURL(file);
-  //             const a = document.createElement("a");
-  //             a.href = url;
-  //             a.download = filename;
-  //             document.body.appendChild(a);
-  //             a.click();
-  //             document.body.removeChild(a);
-  //             setLoading(false);
-  //           }
-  //         }
-  //         // if (response.headers.get("content-disposition")) {
-  //         //   console.log("hi");
-  //         // }
-  //         console.log("Night");
-  //       } catch (error) {
-  //         clearInterval(refreshId);
-  //         setLoading(false);
-  //         console.log(error);
-  //       }
-  //     }, 60000);
-  //   } catch (error) {
-  //     console.log(error);
-  //   }
-  // };
-  Modal.setAppElement('#root');
+  Modal.setAppElement("#root");
   const [sampleImages, setSampleImages] = useState([]);
-
-  const [terminateLoop, setTerminateLoop] = useState(false);
-  const [sampleImageInterval, setSampleImageInterval] = useState(null);
-  const [videoCheckInterval, setVideoCheckInterval] = useState(null);
   const [gid, setGid] = useState("");
 
   const checkSampleImages = async (id, sampleLoop) => {
@@ -177,35 +111,27 @@ function CameraPage() {
       const response = await fetch(`${base_url}/get_samples/${id}`, {
         method: "POST",
       });
-      console.log(response);
       if (response.ok) {
         const images = await response.json();
         if (images && images.length > 0) {
-          console.log("images:", images);
           setSampleImages(images);
+          console.log(images);
           setLoading(false);
-          console.log(sampleImageInterval);
           clearInterval(sampleLoop);
-          setTerminateLoop(true);
-
-          return true;
+          openModal();
         }
       }
-
-      return null;
     } catch (error) {
       console.log(error);
-      return null;
     }
   };
 
-  const checkVideo = async (VideoInterval) => {
+  const checkVideo = async (videoInterval) => {
     try {
       const response = await fetch(`${base_url}/get_video/${gid}`, {
         method: "POST",
       });
       if (response.ok) {
-        console.log("video", response);
         for (var pair of response.headers.entries()) {
           if (pair[1] === "video/mp4") {
             const filename = "temp.mp4";
@@ -218,7 +144,7 @@ function CameraPage() {
             a.click();
             document.body.removeChild(a);
             setLoading(false);
-            clearInterval(VideoInterval);
+            clearInterval(videoInterval);
           }
         }
       }
@@ -226,47 +152,33 @@ function CameraPage() {
       console.log(error);
     }
   };
-  // var sampleLoop;
+
   const imageRouteCalls = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${base_url}/gen_samples/${gid}`, {
+      await fetch(`${base_url}/gen_samples/${gid}`, {
         method: "POST",
       });
-      console.log(response.message);
-      let sampleLoop = setInterval(() => {
-        checkSampleImages(gid, sampleLoop);
+      let imageInterval = setInterval(() => {
+        checkSampleImages(gid, imageInterval);
       }, 60000);
-
-      console.log("sample loop test : " + sampleLoop);
-      // setSampleImageInterval(sampleLoop);
     } catch (error) {
       console.log(error);
     }
   };
-  // useEffect(()=>{
-  //   console.log("Inside useEffect");
-  //   console.log(sampleLoop);
-  //   clearInterval(sampleLoop);
-  // },[terminateLoop])
+
   const videoRouteCalls = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${base_url}/gen_video/${gid}`, {
+      await fetch(`${base_url}/gen_video/${gid}`, {
         method: "POST",
       });
-      console.log(response.message);
+      let videoInterval = setInterval(() => {
+        checkVideo(videoInterval);
+      }, 60000);
     } catch (error) {
       console.log(error);
     }
-    let VideoInterval = setInterval(() => {
-      checkVideo(VideoInterval);
-    }, 60000);
-    setVideoCheckInterval(VideoInterval);
-  };
-
-  const waitFunc = async (delay) => {
-    return new Promise((resolve) => setTimeout(resolve, delay));
   };
 
   const handleSubmit = async (event) => {
@@ -274,6 +186,7 @@ function CameraPage() {
     const formData = new FormData(event.target); // get the form data
     const url = `${base_url}/submit_form`; // replace this with your URL
     formData.delete("audio");
+    setSampleImages([]);
     try {
       const buffer = await urlToBuffer(audioURL);
       const croppedBuffer = cropBuffer(buffer, time[0], time[1]);
@@ -282,7 +195,6 @@ function CameraPage() {
       const audioTemp = new File([wav], "my-audio-file.wav", {
         type: "audio/wav",
       });
-      console.log(audioTemp);
       formData.append("audio", audioTemp, "temp.wav");
       setLoading(true);
       const response = await fetch(url, {
@@ -290,26 +202,14 @@ function CameraPage() {
         body: formData,
       });
       const task = await response.json();
-      console.log(task);
       const id = task.id;
-      console.log(id);
       setGid(id);
 
-      let imgRes = null;
-
       let sampleLoop = setInterval(() => {
-        console.log("Inside get samples");
         checkSampleImages(id, sampleLoop);
       }, 60000);
 
-      // while(imgRes == null){
-      //   console.log("Loop img")
-      //   imgRes = await checkSampleImages(id);
-
-      //   await waitFunc(60000);
-      // }
-
-      console.log("after loop call one", sampleLoop);
+      // console.log("after loop call one", sampleLoop);
     } catch (error) {
       setLoading(false);
       console.log(error);
@@ -319,15 +219,14 @@ function CameraPage() {
   console.log(loading);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-const openModal = () => {
-  setIsModalOpen(true);
-};
+  const openModal = () => {
+    setIsModalOpen(true);
+  };
 
-const closeModal = () => {
-  setIsModalOpen(false);
-};
+  const closeModal = () => {
+    setIsModalOpen(false);
+  };
   const handleGenerateButtonClick = (action) => {
-    console.log("action:", action);
     if (action === "regenerate") {
       setSampleImages([]);
       closeModal();
@@ -347,7 +246,7 @@ const closeModal = () => {
   //     }
   //   };
   // }, []);
-  
+
   return (
     <>
       <Sidenav />
@@ -530,13 +429,13 @@ const closeModal = () => {
               name="upscale"
             />
           </div>
-          <button type="submit" className="recording-btn" onClick={openModal}>
+          <button type="submit" className="recording-btn">
             Create Video
           </button>
         </form>
       </div>
       {sampleImages.length > 0 && (
-        <div >
+        <div>
           <Modal
             isOpen={isModalOpen}
             onRequestClose={closeModal}
