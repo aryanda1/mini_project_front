@@ -53,8 +53,8 @@
 
 .container {
   min-height: 100vh;
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  display: flex;
+  flex-wrap: wrap;
   justify-content: center;
   align-items: center;
   left: 4em;
