@@ -100,7 +100,7 @@ function CameraPage() {
     const url = URL.createObjectURL(file);
     setAudioURL(url);
   };
-  const base_url = "https://4897-34-124-142-73.ngrok-free.app";
+  const base_url = process.env.REACT_APP_API_URL;
 
   Modal.setAppElement("#root");
   const [sampleImages, setSampleImages] = useState([]);
